@@ -1,0 +1,286 @@
+<title>Noche Azul</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#060a1c">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* Layout concept: one 16:9 stage that is cut like an anime film (wide shot, close-up, manga inset),
+   a notation lane under it, and four pads. Palette: night-club indigo, sodium amber rim light,
+   one azure neon. Single committed dark look on purpose (a stage at night). */
+@font-face{font-family:Bravura;src:url(data:font/woff2;base64,/*BRAVURA_B64*/) format('woff2');font-display:block}
+:root{
+  --ink:#060a1c; --night:#0b1433; --deep:#142054; --azure:#7aa5ff; --amber:#ffb84d; --ember:#ff7a4d;
+  --cream:#f4ecd8; --mute:#93a2cf; --line:rgba(140,165,235,.22); --panel:rgba(8,13,36,.78);
+  --b0:#e0566a; --b1:#f2c94c; --b2:#3fc1a5; --b3:#9b7de6;
+  --display:'Shippori Mincho B1','Hiragino Mincho ProN','Yu Mincho',Georgia,serif;
+  --body:'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',system-ui,-apple-system,'Segoe UI',sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--ink)}
+body{margin:0;color:var(--cream);font:400 15px/1.5 var(--body);overflow-x:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:10px 18px;min-height:100%;-webkit-tap-highlight-color:transparent;
+  background:radial-gradient(1200px 600px at 50% -10%,#14205a 0%,var(--ink) 62%)}
+button{font:inherit;color:inherit}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+#col{position:relative;width:min(100%,calc((100dvh - 342px) * 16 / 9),1180px);min-width:min(100%,320px);margin:0 auto}
+@supports not (height:100dvh){#col{width:min(100%,calc((100vh - 342px) * 16 / 9),1180px)}}
+
+.top{display:flex;align-items:center;gap:12px;padding:2px 0 10px;min-width:0}
+.logo{font:800 20px/1 var(--display);letter-spacing:.14em;text-transform:uppercase;color:var(--cream);white-space:nowrap}
+.logo b{color:var(--azure);font-weight:800}
+.where{flex:1;min-width:0;font-size:12px;color:var(--mute);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ibtn{appearance:none;border:1px solid var(--line);background:rgba(10,16,44,.7);border-radius:999px;padding:6px 14px;font-size:13px;cursor:pointer;color:var(--cream);min-height:34px}
+.ibtn:hover{border-color:var(--azure)}
+.ibtn:focus-visible,.pad:focus-visible,.btn:focus-visible,.opt:focus-visible,input:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+.stage{position:relative;aspect-ratio:16/9;overflow:hidden;background:#04071a;border:1px solid var(--line);border-radius:3px;isolation:isolate}
+.view{position:absolute;inset:0;width:100%;height:100%;display:block}
+#closeWrap{position:absolute;overflow:hidden;z-index:3;background:#08102e;
+  transition:inset .55s cubic-bezier(.7,0,.2,1),clip-path .55s cubic-bezier(.7,0,.2,1),opacity .3s;
+  inset:0 0 0 100%;clip-path:polygon(100% 0,100% 0,100% 100%,100% 100%)}
+#closeWrap.full{inset:0;clip-path:polygon(0 0,100% 0,100% 100%,0 100%)}
+#closeWrap.inset{inset:14% 2% 24% 54%;clip-path:polygon(7% 0,100% 0,93% 100%,0 100%);box-shadow:0 0 0 2px var(--amber)}
+#closeWrap svg{width:100%;height:100%;display:block}
+#fx{position:absolute;inset:0;width:100%;height:100%;z-index:4;pointer-events:none;mix-blend-mode:screen}
+#panels{position:absolute;inset:0;z-index:5;display:flex;gap:1.1%;padding:0 1.2%;pointer-events:none;visibility:hidden}
+#panels.on{visibility:visible}
+.pn{flex:1;position:relative;overflow:hidden;background:#06103a;clip-path:polygon(9% 0,100% 0,91% 100%,0 100%);transform:translateY(var(--from,-105%));transition:transform .32s cubic-bezier(.2,1.1,.3,1)}
+.pn:nth-child(even){--from:105%}
+#panels.on .pn{transform:none}
+#panels.on .pn:nth-child(1){transition-delay:0s}#panels.on .pn:nth-child(2){transition-delay:.06s}#panels.on .pn:nth-child(3){transition-delay:.12s}#panels.on .pn:nth-child(4){transition-delay:.18s}
+#panels.on .pn svg{animation:pshake .12s steps(2) infinite}
+@keyframes pshake{0%{transform:translate(-2px,1px) scale(1.04)}100%{transform:translate(2px,-1px) scale(1.04)}}
+.pn svg{width:100%;height:100%;display:block}
+.pn::after{content:"";position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 45%,rgba(255,255,255,.035) 0 1.2deg,transparent 1.5deg 6deg);mix-blend-mode:screen}
+.psfx{position:absolute;left:0;right:0;top:42%;text-align:center;z-index:2;font:800 italic clamp(40px,9vw,120px)/1 'Shippori Mincho B1',serif;color:#fff6c8;text-shadow:0 0 0 #000,4px 4px 0 #04061a,-3px -3px 0 #04061a,0 0 32px rgba(255,184,77,.8);transform:rotate(-6deg) scale(0);opacity:0}
+#panels.on .psfx{animation:sfxpop .5s .2s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes sfxpop{to{transform:rotate(-6deg) scale(1);opacity:1}}
+.fl{transform-origin:720px 440px;animation:flick .28s steps(2) infinite alternate}.fl0{animation-duration:.34s}
+@keyframes flick{from{transform:scale(.95) rotate(-1deg)}to{transform:scale(1.07) rotate(1.5deg)}}
+.glint{animation:glint 1.4s steps(8) infinite}
+@keyframes glint{from{transform:translateX(-120px) skewX(-20deg)}to{transform:translateX(560px) skewX(-20deg)}}
+.star{transform-origin:1548px 518px;animation:twk .5s steps(2) infinite alternate}
+@keyframes twk{from{transform:scale(.6)}to{transform:scale(1.15)}}
+.grain{position:absolute;inset:-20%;z-index:5;pointer-events:none;opacity:.2;mix-blend-mode:overlay;animation:grain .9s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-3%)}60%{transform:translate(-2%,-2%)}80%{transform:translate(3%,3%)}100%{transform:translate(0,0)}}
+.bar{position:absolute;left:0;right:0;height:0;background:#000;z-index:6;transition:height .5s cubic-bezier(.7,0,.2,1)}
+.bar.t{top:0}.bar.b{bottom:0}
+.stage.cine .bar{height:8.5%}
+.flash{position:absolute;inset:0;z-index:7;background:#fff;opacity:0;pointer-events:none}
+.flash.go{animation:flash .28s ease-out}
+@keyframes flash{0%{opacity:.55}100%{opacity:0}}
+.slash{position:absolute;top:-10%;bottom:-10%;width:6%;left:-10%;z-index:7;background:linear-gradient(90deg,transparent,#fff,transparent);transform:skewX(-20deg);opacity:0;pointer-events:none}
+.slash.go{animation:slash .5s ease-in}
+@keyframes slash{0%{left:-10%;opacity:.9}100%{left:110%;opacity:0}}
+
+.hud{position:absolute;z-index:8;pointer-events:none}
+.meter{left:50%;top:2.6%;transform:translateX(-50%);width:min(46%,420px);text-align:center}
+.meter .row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px}
+.meter .lab{font-size:clamp(9px,1.1vw,12px);letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.meter .word{font:800 italic clamp(15px,2.2vw,26px)/1 var(--display);color:var(--amber);text-shadow:0 0 18px rgba(255,184,77,.5)}
+.segs{position:relative;display:flex;gap:3px;height:clamp(7px,1.1vw,12px)}
+.segs i{flex:1;transform:skewX(-20deg);background:rgba(120,140,200,.22);transition:background .25s}
+.segs i.on{background:var(--c)}
+.mark{position:absolute;top:-4px;bottom:-4px;width:3px;background:#fff;box-shadow:0 0 8px #fff;transition:left .12s linear}
+.solo-line{position:absolute;top:-6px;bottom:-6px;border-left:1.5px dashed var(--amber)}
+.solo-lab{position:absolute;top:100%;font-size:clamp(8px,1vw,11px);letter-spacing:.12em;color:var(--amber);text-transform:uppercase;transform:translateX(-50%);margin-top:6px;white-space:nowrap}
+.faces{left:2%;top:2.6%;display:flex;flex-direction:column;gap:clamp(4px,.8vw,9px)}
+.face{display:flex;align-items:center;gap:8px}
+.face svg{width:clamp(30px,5.2vw,58px);height:auto;border-radius:50%;box-shadow:0 0 0 2px var(--ring,rgba(255,255,255,.25)),0 6px 18px rgba(0,0,0,.5);transition:box-shadow .3s}
+.face span{font-size:clamp(9px,1vw,11px);letter-spacing:.14em;text-transform:uppercase;color:var(--cream);text-shadow:0 1px 4px #000;opacity:.85}
+.stems{left:2%;bottom:3.2%;display:flex;gap:6px;flex-wrap:wrap;max-width:60%}
+.stem{display:flex;align-items:center;gap:5px;font-size:clamp(8px,1vw,11px);letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(6,10,28,.72);border:1px solid var(--line);color:var(--mute);transition:opacity .4s,color .4s,border-color .4s}
+.stem i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.stem.on{color:var(--cream);border-color:rgba(255,184,77,.55)}
+.stem:not(.on){opacity:.45}
+.banner{right:2%;top:2.6%;text-align:right}
+.banner .tag{display:inline-block;transform:skewX(-14deg);background:var(--amber);color:#2a1604;padding:4px 14px;font:800 clamp(11px,1.7vw,19px)/1.1 var(--display);letter-spacing:.14em;text-transform:uppercase;transition:background .3s}
+.banner .tag span{display:inline-block;transform:skewX(14deg)}
+.banner small{display:block;margin-top:4px;font-size:clamp(9px,1.05vw,12px);color:var(--cream);opacity:.85;letter-spacing:.06em;text-shadow:0 1px 4px #000}
+.sub{left:50%;bottom:7%;transform:translateX(-50%);width:min(78%,760px);text-align:center;opacity:0;transition:opacity .35s}
+.sub.on{opacity:1}
+.sub .who{display:block;font-size:clamp(8px,.95vw,11px);letter-spacing:.24em;text-transform:uppercase;color:var(--amber);margin-bottom:2px;text-shadow:0 1px 4px #000,0 0 2px #000}
+.sub .line{font:700 clamp(13px,2vw,23px)/1.25 var(--display);color:var(--cream);text-shadow:0 2px 10px #000,0 0 2px #000}
+.stage.cine .sub{bottom:11%}
+.stage.cine .stems{bottom:10%}
+
+.lane{position:relative;margin-top:8px;height:clamp(140px,19vh,176px);border:1px solid var(--line);border-radius:3px;background:linear-gradient(180deg,#0b1438,#080d27)}
+#score{position:absolute;inset:0;width:100%;height:100%;display:block}
+.keys{position:absolute;left:0;bottom:4px;display:flex;gap:5px;pointer-events:none}
+.pads{display:grid;grid-template-columns:repeat(4,1fr) .8fr .8fr;gap:8px;margin-top:8px}
+.pad{appearance:none;border:0;border-radius:8px;height:clamp(54px,8vh,76px);cursor:pointer;position:relative;color:#1a1206;font:800 22px/1 var(--display);touch-action:none;user-select:none;-webkit-user-select:none;
+  background:var(--c);box-shadow:inset 0 -5px 0 rgba(0,0,0,.28),0 4px 14px rgba(0,0,0,.4);transition:transform .05s,filter .1s}
+.pad small{display:block;margin-top:5px;font:500 10px/1 var(--body);letter-spacing:.14em;text-transform:uppercase;opacity:.75}
+.pad.dn{transform:translateY(3px) scale(.98);filter:brightness(1.25)}
+.pad.oct{background:#26356e;color:var(--cream);font-size:15px;box-shadow:inset 0 -5px 0 rgba(0,0,0,.35)}
+.pad.oct.dn,.pad.oct.lock{background:var(--azure);color:#05122e}
+.hint{margin:10px 2px 0;font-size:12px;color:var(--mute);display:flex;flex-wrap:wrap;gap:4px 16px}
+.hint b{color:var(--cream);font-weight:500}
+@media (pointer:coarse){.pad{height:clamp(72px,11vh,96px)}}
+@media (max-width:560px){.meter .lab,.banner small,.faces span{display:none}.meter{width:38%;top:3.4%}.banner .tag{font-size:10px;padding:3px 9px}.stem{padding:2px 6px;font-size:8px}.logo{font-size:16px}.where{display:none}.pad{font-size:19px}.pads{gap:6px}}
+
+.ov{position:absolute;inset:0;z-index:30;display:grid;place-items:center;padding:12px;background:rgba(4,7,20,.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);overflow:auto}
+.ov[hidden]{display:none!important}
+.card{width:min(100%,560px);background:linear-gradient(180deg,rgba(14,22,58,.96),rgba(8,12,34,.96));border:1px solid var(--line);border-radius:4px;padding:clamp(16px,3.2vw,30px);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+.eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:var(--azure);margin:0 0 8px}
+.card h1{margin:0;font:800 clamp(34px,7vw,62px)/.95 var(--display);letter-spacing:.06em;text-transform:uppercase;text-wrap:balance}
+.card h1 em{font-style:normal;color:var(--azure)}
+.card h2{margin:0 0 6px;font:800 clamp(24px,4.4vw,36px)/1.05 var(--display);text-wrap:balance}
+.card p{margin:10px 0 0;color:#cfd7ee;max-width:58ch;text-wrap:pretty}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0 4px;padding:0;border:0}
+.opts legend{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mute);padding:0;margin-bottom:8px}
+.opt{appearance:none;text-align:left;border:1px solid var(--line);background:rgba(16,26,70,.6);border-radius:6px;padding:10px 10px 11px;cursor:pointer;min-width:0}
+.opt b{display:block;font:800 17px/1.1 var(--display)}
+.opt span{display:block;margin-top:5px;font-size:11.5px;line-height:1.35;color:var(--mute)}
+.opt[aria-checked=true]{border-color:var(--amber);background:rgba(255,184,77,.14)}
+.opt[aria-checked=true] b{color:var(--amber)}
+.row2{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;align-items:center}
+.btn{appearance:none;border:0;cursor:pointer;border-radius:4px;padding:12px 22px;font:800 16px/1 var(--display);letter-spacing:.1em;text-transform:uppercase;background:var(--amber);color:#2a1604;min-height:44px}
+.btn:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--cream)}
+.btn.ghost:hover{border-color:var(--azure)}
+.fine{margin-top:14px;font-size:12px;color:var(--mute)}
+.set{display:grid;gap:14px;margin-top:12px}
+.set label{display:grid;gap:6px;font-size:13px;color:#cfd7ee}
+.set .v{display:flex;justify-content:space-between}
+.set output{color:var(--amber);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--amber)}
+.chk{display:flex!important;grid-template-columns:none;align-items:center;gap:10px}
+.stat{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:16px 0 0}
+.stat div{background:rgba(16,26,70,.6);border:1px solid var(--line);border-radius:4px;padding:8px 6px;text-align:center}
+.stat b{display:block;font:800 22px/1 var(--display);font-variant-numeric:tabular-nums}
+.stat span{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
+.grade{font:800 italic clamp(52px,12vw,92px)/.95 var(--display);letter-spacing:.02em;margin:2px 0 0}
+.credit{margin:14px 0 0;font-size:11px;color:#6f7ca8;text-align:center}
+.credit a{color:#8fa6e6}
+.calibrate{font:700 clamp(28px,6vw,44px)/1 var(--display);color:var(--amber);font-variant-numeric:tabular-nums;margin:10px 0 0}
+@media (prefers-reduced-motion:reduce){.fl,.glint,.star,#panels.on .pn svg{animation:none}.pn{transition:none}.grain{animation:none}.flash.go,.slash.go{animation:none}#closeWrap{transition:none}.bar{transition:none}}
+.scene-card{position:absolute;inset:0;z-index:20;background:#03051a;display:grid;place-items:center;text-align:center;opacity:0;pointer-events:none;transition:opacity .5s}
+.scene-card.show{opacity:1}
+.scene-card small{display:block;font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--amber)}
+.scene-card b{display:block;margin-top:8px;font:800 clamp(24px,5vw,52px)/1 var(--display);letter-spacing:.06em}
+.takes{right:2%;top:2.6%;text-align:right;display:none}
+.takes .lab{font-size:clamp(9px,1.1vw,12px);letter-spacing:.2em;text-transform:uppercase;color:var(--mute)}
+.takes .dots{display:flex;gap:8px;justify-content:flex-end;margin:5px 0 4px}
+.takes i{width:clamp(18px,2.6vw,32px);height:clamp(18px,2.6vw,32px);border-radius:50%;border:2px dashed #9db4f0;transition:all .3s}
+.takes i.on{background:var(--amber);border:2px solid var(--amber);box-shadow:0 0 18px rgba(255,184,77,.7)}
+.takes small{display:block;font-size:clamp(8px,1vw,11px);color:#cfd7ee;text-shadow:0 1px 4px #000;max-width:30ch;margin-left:auto}
+.stage.practice .banner{top:auto;bottom:6%}
+.stage.practice .stems{display:none}
+.react{left:3%;top:30%;width:clamp(120px,24%,250px);aspect-ratio:4/5;opacity:0;transform:scale(.4) rotate(-8deg);transition:opacity .15s,transform .25s cubic-bezier(.2,1.6,.4,1);clip-path:polygon(0 4%,100% 0,96% 100%,4% 96%);z-index:9}
+.react.on{opacity:1;transform:scale(1) rotate(-3deg)}
+.react .rbg{position:absolute;inset:0;background:#0a1030}
+.react .rface{position:absolute;left:6%;right:6%;top:6%;height:72%}
+.react .rface svg{width:100%;height:100%;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.react .rsfx{position:absolute;left:0;right:0;bottom:3%;text-align:center;font:900 clamp(18px,3vw,32px)/1 var(--display);color:#fff;-webkit-text-stroke:5px #06082a;paint-order:stroke fill;letter-spacing:.04em;transform:rotate(-5deg)}
+.react.m-worried .rbg{background:repeating-linear-gradient(90deg,#0a1030 0 14px,#16206a 14px 17px)}.react.m-worried .rface{animation:rshake .2s steps(2) infinite}.react.m-worried .rsfx{color:#8a9cff}
+.react.m-encourage .rbg{background:repeating-conic-gradient(from 0deg at 50% 45%,#7a3a14 0 5deg,#3a1808 5deg 11deg)}.react.m-encourage .rface{animation:rbob .42s ease-out infinite alternate}.react.m-encourage .rsfx{color:#ffb347}
+.react.m-groove .rbg{background:linear-gradient(160deg,#16307f,#5a2a9a)}.react.m-groove .rface{animation:rsway .58s ease-in-out infinite alternate}.react.m-groove .rsfx{color:#7fe3c8}
+.react.m-ecstatic .rbg{background:repeating-conic-gradient(from 0deg at 50% 45%,#fff2a8 0 3deg,#ff8a3a 3deg 9deg);animation:rspin 4s linear infinite}.react.m-ecstatic .rface{animation:rshake .14s steps(2) infinite}.react.m-ecstatic .rsfx{color:#fff;-webkit-text-stroke-color:#c4204a}
+@keyframes rshake{0%,100%{transform:translate(0,0)}25%{transform:translate(-4px,1px)}50%{transform:translate(4px,-1px)}75%{transform:translate(-2px,1px)}}
+@keyframes rbob{from{transform:translateY(0)}to{transform:translateY(-10px)}}
+@keyframes rsway{from{transform:rotate(-5deg)}to{transform:rotate(5deg)}}
+@keyframes rspin{to{filter:hue-rotate(40deg)}}
+.endart{margin:-6px -6px 14px;aspect-ratio:640/290;overflow:hidden;border-radius:3px;background:#05071c}.endart svg{display:block;width:100%;height:100%}
+.endart .tw{animation:rbob .5s ease-in-out infinite alternate}.endart .cheer{animation:rbob .45s ease-in-out infinite alternate}
+.endart .rain{animation:rain 1s linear infinite}@keyframes rain{from{transform:translateY(-30px)}to{transform:translateY(30px)}}
+@media (prefers-reduced-motion:reduce){.react *,.react,.endart *{animation:none!important}.scene-card{transition:none}}
+</style>
+
+<div id="col">
+  <header class="top">
+    <div class="logo">Noche <b>Azul</b></div>
+    <div class="where" id="where">Stage 1 · The back room</div>
+    <button class="ibtn" id="btnSkip" type="button">Skip practice</button>
+    <button class="ibtn" id="btnPause" type="button">Pause</button>
+    <button class="ibtn" id="btnSet" type="button">Settings</button>
+  </header>
+
+  <div class="stage" id="stage">
+    <div id="wideHost"></div>
+    <div id="closeWrap"><div id="closeHost" style="width:100%;height:100%"></div></div>
+    <canvas id="fx"></canvas>
+    <div id="panels" aria-hidden="true"></div>
+    <svg class="grain" viewBox="0 0 400 400" preserveAspectRatio="none" aria-hidden="true"><filter id="ng"><feTurbulence type="fractalNoise" baseFrequency=".85" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="400" height="400" filter="url(#ng)"/></svg>
+    <div class="bar t"></div><div class="bar b"></div>
+    <div class="scene-card" id="sceneCard" aria-hidden="true"><div><small id="scSmall">Scene 1</small><b id="scBig">The practice room</b></div></div>
+    <div class="flash" id="flash"></div><div class="slash" id="slash"></div>
+
+    <div class="hud meter" aria-hidden="true">
+      <div class="row"><span class="lab">Rank</span><span class="word" id="rankWord">Good</span></div>
+      <div class="segs" id="segs"><i style="--c:#c4485a"></i><i style="--c:#d98a3a"></i><i style="--c:#3fc1a5"></i><i style="--c:#f2c94c"></i>
+        <div class="solo-line" id="soloLine"></div><div class="mark" id="mark"></div></div>
+      <div class="solo-lab" id="soloLab">solo line</div>
+    </div>
+    <div class="hud takes" id="takes" aria-hidden="true"><span class="lab">Takes</span><div class="dots"><i></i><i></i><i></i></div><small>Get through the hook 3 times</small></div>
+    <div class="hud faces" id="faces" aria-hidden="true"></div>
+    <div class="hud react" id="react" aria-hidden="true"><div class="rbg"></div><div class="rface"></div><div class="rsfx"></div></div>
+    <div class="hud stems" id="stems" aria-hidden="true"></div>
+    <div class="hud banner" id="banner" aria-hidden="true"><span class="tag"><span id="bannerTxt">Listen</span></span><small id="bannerSub"></small></div>
+    <div class="hud sub" id="sub" aria-hidden="true"><span class="who" id="subWho"></span><span class="line" id="subLine"></span></div>
+    <div class="sr" id="live" role="status" aria-live="polite"></div>
+  </div>
+
+  <div class="lane"><canvas id="score" aria-label="Scrolling sheet music. Notes are colored by the button to press."></canvas></div>
+
+  <div class="pads" id="pads">
+    <button class="pad" data-b="0" style="--c:var(--b0)" type="button" aria-label="Button 1, key D">D<small>red</small></button>
+    <button class="pad" data-b="1" style="--c:var(--b1)" type="button" aria-label="Button 2, key F">F<small>amber</small></button>
+    <button class="pad" data-b="2" style="--c:var(--b2)" type="button" aria-label="Button 3, key J">J<small>teal</small></button>
+    <button class="pad" data-b="3" style="--c:var(--b3)" type="button" aria-label="Button 4, key K">K<small>violet</small></button>
+    <button class="pad oct" id="padOctDn" type="button" aria-label="Low octave, hold Shift or tap to toggle">Low<small>shift</small></button>
+    <button class="pad oct" id="padOct" type="button" aria-label="High octave, hold Space or tap to toggle">High<small>space</small></button>
+  </div>
+  <div class="hint"><span>Match the <b>color</b> of each note with <b>D F J K</b> or the pads</span><span><b>Hold</b> long notes for their full length</span><span>Solo: <b>Space</b> up an octave · <b>Shift</b> down</span><span><b>Esc</b> pauses</span></div>
+  <p class="credit">Music font Bravura by Steinberg, SIL Open Font License 1.1 · all music is synthesized live in your browser</p>
+
+  <!-- title -->
+  <div class="ov" id="ovTitle">
+    <div class="card">
+      <p class="eyebrow">A Latin jazz rhythm story</p>
+      <h1>Noche <em>Azul</em></h1>
+      <p>Scene 1, the practice room: listen to the hook and play it back three times. Scene 2, the club: the whole band kicks in, and if you earned it, the solo is yours.</p>
+      <fieldset class="opts" id="modeOpts" role="radiogroup" aria-label="Difficulty" style="border:0">
+        <legend>Difficulty</legend>
+        <button class="opt" role="radio" data-mode="easy" type="button"><b>Easy</b><span>Any button works. Only your timing counts.</span></button>
+        <button class="opt" role="radio" data-mode="medium" type="button"><b>Medium</b><span>Left pair (D F) or right pair (J K).</span></button>
+        <button class="opt" role="radio" data-mode="hard" type="button"><b>Hard</b><span>The exact color, right on time.</span></button>
+      </fieldset>
+      <div class="row2"><button class="btn" id="btnStart" type="button">Take the stage</button><button class="btn ghost" id="btnCal1" type="button">Sync audio first</button></div>
+      <p class="fine">Headphones help. Playing needs sound, so the music starts when you press the button. Bluetooth headphones add delay: use Sync audio first.</p>
+    </div>
+  </div>
+
+  <!-- pause -->
+  <div class="ov" id="ovPause" hidden><div class="card"><h2>Paused</h2><p>The band waits for you.</p>
+    <div class="row2"><button class="btn" id="btnResume" type="button">Resume</button><button class="btn ghost" id="btnQuit" type="button">Back to title</button></div></div></div>
+
+  <!-- settings -->
+  <div class="ov" id="ovSet" hidden><div class="card"><h2>Settings</h2>
+    <div class="set">
+      <label for="rngOff"><span class="v"><span>Audio delay (headphones)</span><output id="outOff">0 ms</output></span>
+        <input id="rngOff" type="range" min="-300" max="600" step="5" value="0"></label>
+      <label for="rngVol"><span class="v"><span>Volume</span><output id="outVol">85%</output></span>
+        <input id="rngVol" type="range" min="0" max="100" step="1" value="85"></label>
+      <label class="chk" for="chkFx"><input id="chkFx" type="checkbox" checked><span>Speed lines, flashes and camera cuts</span></label>
+    </div>
+    <div class="row2"><button class="btn ghost" id="btnCal2" type="button">Sync audio</button><button class="btn" id="btnSetDone" type="button">Done</button></div>
+    <p class="fine">Bluetooth headphones usually need +150 to +300 ms. If the sound arrives before the notes reach the line, lower it; if after, raise it. The notes and your timing both move with this. Sync audio measures it for you.</p></div></div>
+
+  <!-- calibrate -->
+  <div class="ov" id="ovCal" hidden><div class="card"><h2>Sync audio</h2>
+    <p>Tap any pad, or press D F J K, in time with the clicks. Ignore the first few. Eight taps are enough.</p>
+    <div class="calibrate" id="calOut">Tap 0 of 8</div>
+    <div class="row2"><button class="btn" id="btnCalApply" type="button">Use this</button><button class="btn ghost" id="btnCalCancel" type="button">Cancel</button></div></div></div>
+
+  <!-- results -->
+  <div class="ov" id="ovEnd" hidden><div class="card">
+    <p class="eyebrow" id="endEye">Set complete</p>
+    <div class="endart" id="endArt"></div>
+    <div class="grade" id="endGrade">Cool</div>
+    <p id="endLine"></p>
+    <div class="stat"><div><b id="sCool">0</b><span>Cool</span></div><div><b id="sGood">0</b><span>Good</span></div><div><b id="sBad">0</b><span>Bad</span></div><div><b id="sMiss">0</b><span>Miss</span></div></div>
+    <p class="fine" id="endSolo"></p>
+    <div class="row2"><button class="btn" id="btnAgain" type="button">Play again</button><button class="btn ghost" id="btnTitle" type="button">Change difficulty</button></div></div></div>
+</div>
