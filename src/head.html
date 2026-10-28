@@ -1,7 +1,7 @@
 <title>Noche Azul</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="theme-color" content="#060a1c">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,800&family=DM+Sans:wght@400;500;700&display=swap">
 <style>
 /* Layout concept: one 16:9 stage that is cut like an anime film (wide shot, close-up, manga inset),
    a notation lane under it, and four pads. Palette: night-club indigo, sodium amber rim light,
@@ -11,8 +11,8 @@
   --ink:#060a1c; --night:#0b1433; --deep:#142054; --azure:#7aa5ff; --amber:#ffb84d; --ember:#ff7a4d;
   --cream:#f4ecd8; --mute:#93a2cf; --line:rgba(140,165,235,.22); --panel:rgba(8,13,36,.78);
   --b0:#e0566a; --b1:#f2c94c; --b2:#3fc1a5; --b3:#9b7de6;
-  --display:'Shippori Mincho B1','Hiragino Mincho ProN','Yu Mincho',Georgia,serif;
-  --body:'Zen Kaku Gothic New','Hiragino Sans','Yu Gothic',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --display:'Playfair Display',Georgia,serif;
+  --body:'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
   color-scheme:dark;
 }
 *{box-sizing:border-box}
@@ -36,6 +36,9 @@ button{font:inherit;color:inherit}
 
 .stage{position:relative;aspect-ratio:16/9;overflow:hidden;background:#04071a;border:1px solid var(--line);border-radius:3px;isolation:isolate}
 .view{position:absolute;inset:0;width:100%;height:100%;display:block}
+#c3d{position:absolute;inset:0;width:100%;height:100%;display:none}
+.stage.three #c3d{display:block}
+.stage.three #wideHost{visibility:hidden}
 #closeWrap{position:absolute;overflow:hidden;z-index:3;background:#08102e;
   transition:inset .55s cubic-bezier(.7,0,.2,1),clip-path .55s cubic-bezier(.7,0,.2,1),opacity .3s;
   inset:0 0 0 100%;clip-path:polygon(100% 0,100% 0,100% 100%,100% 100%)}
@@ -49,11 +52,11 @@ button{font:inherit;color:inherit}
 .pn:nth-child(even){--from:105%}
 #panels.on .pn{transform:none}
 #panels.on .pn:nth-child(1){transition-delay:0s}#panels.on .pn:nth-child(2){transition-delay:.06s}#panels.on .pn:nth-child(3){transition-delay:.12s}#panels.on .pn:nth-child(4){transition-delay:.18s}
-#panels.on .pn svg{animation:pshake .12s steps(2) infinite}
+
 @keyframes pshake{0%{transform:translate(-2px,1px) scale(1.04)}100%{transform:translate(2px,-1px) scale(1.04)}}
 .pn svg{width:100%;height:100%;display:block}
 .pn::after{content:"";position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 50% 45%,rgba(255,255,255,.035) 0 1.2deg,transparent 1.5deg 6deg);mix-blend-mode:screen}
-.psfx{position:absolute;left:0;right:0;top:42%;text-align:center;z-index:2;font:800 italic clamp(40px,9vw,120px)/1 'Shippori Mincho B1',serif;color:#fff6c8;text-shadow:0 0 0 #000,4px 4px 0 #04061a,-3px -3px 0 #04061a,0 0 32px rgba(255,184,77,.8);transform:rotate(-6deg) scale(0);opacity:0}
+.psfx{position:absolute;left:0;right:0;top:42%;text-align:center;z-index:2;font:800 italic clamp(40px,9vw,120px)/1 'Playfair Display',serif;color:#fff6c8;text-shadow:0 0 0 #000,4px 4px 0 #04061a,-3px -3px 0 #04061a,0 0 32px rgba(255,184,77,.8);transform:rotate(-6deg) scale(0);opacity:0}
 #panels.on .psfx{animation:sfxpop .5s .2s cubic-bezier(.2,1.6,.4,1) forwards}
 @keyframes sfxpop{to{transform:rotate(-6deg) scale(1);opacity:1}}
 .fl{transform-origin:720px 440px;animation:flick .28s steps(2) infinite alternate}.fl0{animation-duration:.34s}
@@ -87,9 +90,29 @@ button{font:inherit;color:inherit}
 .solo-lab{position:absolute;top:100%;font-size:clamp(8px,1vw,11px);letter-spacing:.12em;color:var(--amber);text-transform:uppercase;transform:translateX(-50%);margin-top:6px;white-space:nowrap}
 .faces{left:2%;top:2.6%;display:flex;flex-direction:column;gap:clamp(4px,.8vw,9px)}
 .face{display:flex;align-items:center;gap:8px}
-.face svg{width:clamp(30px,5.2vw,58px);height:auto;border-radius:50%;box-shadow:0 0 0 2px var(--ring,rgba(255,255,255,.25)),0 6px 18px rgba(0,0,0,.5);transition:box-shadow .3s}
+.face .fx{width:clamp(30px,5.2vw,58px);aspect-ratio:1;flex:none;border-radius:50%;overflow:hidden;box-shadow:0 0 0 2px var(--ring,rgba(255,255,255,.25)),0 6px 18px rgba(0,0,0,.5);transition:box-shadow .3s}
+.face .fx.pl{position:relative;background:radial-gradient(circle at 50% 38%,#2f4fd0,#0d1440)}
+.rig{position:absolute;width:175%;left:-37%;top:-6%;aspect-ratio:1;transition:transform .12s linear}
+.rig img{position:absolute;display:block;user-select:none;-webkit-user-drag:none}
+.rig .rb{left:0;top:0;width:100%;height:100%}
+.rig .re,.rig .rm{transform:translate(-50%,-50%)}
+.pf{position:relative;width:100%;height:100%;overflow:hidden;background:radial-gradient(circle at 50% 38%,var(--b0),var(--b1))}
+.pf.nobg{background:none;overflow:visible}
+.pf img{width:100%;height:100%;object-fit:cover;object-position:50% 0;display:block;transition:filter .3s,transform .3s;user-select:none;-webkit-user-drag:none}
+.pf.nobg img{object-fit:contain;object-position:50% 100%;filter:drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+.pf.m-worried img{filter:saturate(.75) brightness(.92);transform:translateY(2%) rotate(-2deg)}
+.pf.m-encourage img{transform:translateY(1%)}
+.pf.m-groove img{transform:rotate(1.5deg) scale(1.02)}
+.pf.m-ecstatic img{filter:saturate(1.25) brightness(1.08) contrast(1.05);transform:scale(1.07) rotate(2deg)}
+.pf.nobg.m-worried img{filter:saturate(.75) brightness(.92) drop-shadow(0 4px 10px rgba(0,0,0,.55))}
+.pf.nobg.m-ecstatic img{filter:saturate(1.25) brightness(1.08) drop-shadow(0 0 12px rgba(255,220,140,.7))}
+.psw{position:absolute;right:16%;top:20%;width:13%;aspect-ratio:2/3;background:#dff1ff;border:2px solid #0b0a14;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;transform:rotate(18deg)}
+.psp{position:absolute;right:10%;top:10%;width:20%;aspect-ratio:1;background:#fff6c8;clip-path:polygon(50% 0,60% 40%,100% 50%,60% 60%,50% 100%,40% 60%,0 50%,40% 40%);animation:twk .5s steps(2) infinite alternate}
+.psp.b{right:auto;left:10%;top:30%;width:12%}
+#panels.on .pn .pf{animation:pshake .12s steps(2) infinite}
+.pn .pf img{object-position:50% 8%}
 .face span{font-size:clamp(9px,1vw,11px);letter-spacing:.14em;text-transform:uppercase;color:var(--cream);text-shadow:0 1px 4px #000;opacity:.85}
-.stems{left:2%;bottom:3.2%;display:flex;gap:6px;flex-wrap:wrap;max-width:60%}
+.stems{display:none!important;left:2%;bottom:3.2%;display:flex;gap:6px;flex-wrap:wrap;max-width:60%}
 .stem{display:flex;align-items:center;gap:5px;font-size:clamp(8px,1vw,11px);letter-spacing:.12em;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:rgba(6,10,28,.72);border:1px solid var(--line);color:var(--mute);transition:opacity .4s,color .4s,border-color .4s}
 .stem i{width:6px;height:6px;border-radius:50%;background:currentColor}
 .stem.on{color:var(--cream);border-color:rgba(255,184,77,.55)}
@@ -155,7 +178,7 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 .credit{margin:14px 0 0;font-size:11px;color:#6f7ca8;text-align:center}
 .credit a{color:#8fa6e6}
 .calibrate{font:700 clamp(28px,6vw,44px)/1 var(--display);color:var(--amber);font-variant-numeric:tabular-nums;margin:10px 0 0}
-@media (prefers-reduced-motion:reduce){.fl,.glint,.star,#panels.on .pn svg{animation:none}.pn{transition:none}.grain{animation:none}.flash.go,.slash.go{animation:none}#closeWrap{transition:none}.bar{transition:none}}
+@media (prefers-reduced-motion:reduce){.fl,.glint,.star,.pn .pf,.psp{animation:none}.pn{transition:none}.grain{animation:none}.flash.go,.slash.go{animation:none}#closeWrap{transition:none}.bar{transition:none}}
 .scene-card{position:absolute;inset:0;z-index:20;background:#03051a;display:grid;place-items:center;text-align:center;opacity:0;pointer-events:none;transition:opacity .5s}
 .scene-card.show{opacity:1}
 .scene-card small{display:block;font-size:12px;letter-spacing:.4em;text-transform:uppercase;color:var(--amber)}
@@ -172,7 +195,7 @@ input[type=range]{width:100%;accent-color:var(--amber)}
 .react.on{opacity:1;transform:scale(1) rotate(-3deg)}
 .react .rbg{position:absolute;inset:0;background:#0a1030}
 .react .rface{position:absolute;left:6%;right:6%;top:6%;height:72%}
-.react .rface svg{width:100%;height:100%;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+.react .rface .pf{width:100%;height:100%}
 .react .rsfx{position:absolute;left:0;right:0;bottom:3%;text-align:center;font:900 clamp(18px,3vw,32px)/1 var(--display);color:#fff;-webkit-text-stroke:5px #06082a;paint-order:stroke fill;letter-spacing:.04em;transform:rotate(-5deg)}
 .react.m-worried .rbg{background:repeating-linear-gradient(90deg,#0a1030 0 14px,#16206a 14px 17px)}.react.m-worried .rface{animation:rshake .2s steps(2) infinite}.react.m-worried .rsfx{color:#8a9cff}
 .react.m-encourage .rbg{background:repeating-conic-gradient(from 0deg at 50% 45%,#7a3a14 0 5deg,#3a1808 5deg 11deg)}.react.m-encourage .rface{animation:rbob .42s ease-out infinite alternate}.react.m-encourage .rsfx{color:#ffb347}
@@ -264,6 +287,8 @@ input[type=range]{width:100%;accent-color:var(--amber)}
       <label for="rngVol"><span class="v"><span>Volume</span><output id="outVol">85%</output></span>
         <input id="rngVol" type="range" min="0" max="100" step="1" value="85"></label>
       <label class="chk" for="chkFx"><input id="chkFx" type="checkbox" checked><span>Speed lines, flashes and camera cuts</span></label>
+      <label class="chk" for="chkVoice"><input id="chkVoice" type="checkbox" checked><span>Character voices</span></label>
+      <label class="chk" for="chk3d" id="set3d" hidden><input id="chk3d" type="checkbox" checked><span>3D club (turn off for the 2D drawn version)</span></label>
     </div>
     <div class="row2"><button class="btn ghost" id="btnCal2" type="button">Sync audio</button><button class="btn" id="btnSetDone" type="button">Done</button></div>
     <p class="fine">Bluetooth headphones usually need +150 to +300 ms. If the sound arrives before the notes reach the line, lower it; if after, raise it. The notes and your timing both move with this. Sync audio measures it for you.</p></div></div>

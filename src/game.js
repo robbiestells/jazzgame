@@ -19,7 +19,7 @@ const COMP_LINE = [
   [8, 2, 2, 0], [10, 2, 4, 0],   // E7:  G4 (btn0), B4 (btn0)
   [12, 2, 5, 0], [14, 2, 9, 0],  // Am7: A4 (btn1), E5 (btn3)
 ];
-const SFX = { worried: 'ガーン', encourage: 'ガンバレ!', groove: 'ノリノリ♪', ecstatic: 'キターー!!' };
+const SFX = { worried: '¡AY, AY!', encourage: '¡ÁNIMO!', groove: '¡SABROSO!', ecstatic: '¡CANDELA!' };
 const GL = { black: '', half: '', whole: '', flagU: '', flagD: '', sharp: '', gclef: '', rq: '', r8: '', rh: '', rw: '' };
 const tsGlyph = n => String.fromCharCode(0xE080 + n);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -45,6 +45,7 @@ const S = window.__nz = {
 const stage = $('stage'), sc = { cv: $('score'), g: $('score').getContext('2d'), w: 0, h: 0 };
 $('wideHost').innerHTML = wideSVG() + practiceSVG();
 $('closeHost').innerHTML = closeSVG();
+lsBuild();
 FX.init($('fx'));
 const el = {}; ['c-bass', 'bass-body', 'bass-head', 'bass-armR', 'bass-armL', 'c-piano', 'piano-torso', 'piano-head', 'piano-arm', 'c-perc', 'perc-body', 'perc-head', 'perc-armL', 'perc-armR',
   'c-trump', 'trump-body', 'trump-head', 'trump-arm', 'trump-horn', 'valves', 'bellGlow', 'neon', 'ribbons', 'crowd', 'crowd-hands',
@@ -54,6 +55,34 @@ const T = (id, s) => el[id].setAttribute('transform', s);
 const pads = [...document.querySelectorAll('.pad[data-b]')];
 const facesEl = $('faces'), stemsEl = $('stems');
 ['tomas', 'ines', 'rafa'].forEach(w => { const d = document.createElement('div'); d.className = 'face'; d.id = 'face-' + w; d.innerHTML = '<div class="fx"></div><span>' + CAST[w].name + '</span>'; facesEl.appendChild(d); });
+/* animated faces: base art + swappable eye / mouth layers, one rig per character */
+const PORTRAITS = {};
+for (const w of ['tomas', 'ines', 'rafa']) { const R = RIGS[w]; PORTRAITS[w] = { worried: { head: R.hold, tall: R.play }, encourage: { head: R.hold, tall: R.hold }, groove: { head: R.hold, tall: R.play }, ecstatic: { head: R.hold, tall: R.play } }; }
+PORTRAITS.trump = { ecstatic: { head: RIGS.trump.hold, tall: RIGS.trump.play } };
+const RG = {}, TALK = { who: '', until: 0 }, PL = { hitT: 0, hitR: '' };
+function mkRig(fx, key, i) {
+  fx.classList.add('pl'); fx.innerHTML = '<div class="rig"><img class="rb" alt="" draggable="false"><img class="re" alt="" draggable="false"><img class="re" alt="" draggable="false"><img class="rm" alt="" draggable="false"></div>';
+  const root = fx.firstChild, k = root.children; k[0].src = RIGS[key].base;
+  RG[key] = { root, im: [k[1], k[2], k[3]], key: '', blinkAt: 800 * i, blinkEnd: 0, ph: i * .37 };
+}
+['tomas', 'ines', 'rafa'].forEach((w, i) => mkRig($('face-' + w).firstChild, w, i + 1));
+{ const d = document.createElement('div'); d.className = 'face'; d.id = 'face-player'; d.innerHTML = '<div class="fx"></div><span>You · Trumpet</span>'; facesEl.appendChild(d); mkRig(d.firstChild, 'trump', 0); }
+function rigPlace(img, o) { img.src = o.src; img.style.left = o.x + '%'; img.style.top = o.y + '%'; img.style.width = o.w + '%'; }
+function rigTick(ts) {
+  if (S.phase === 'title') return;
+  const m = S.mood || 'groove', baseEye = { worried: 1, encourage: 0, groove: 2, ecstatic: 4 }[m] || 0, idleMouth = { worried: 1, encourage: 0, groove: 0, ecstatic: 4 }[m] || 0;
+  for (const w in RG) {
+    const r = RG[w]; let eye = baseEye, mouth = idleMouth;
+    if (ts > r.blinkAt) { r.blinkAt = ts + 2200 + Math.random() * 3200; r.blinkEnd = ts + 130; }
+    if (ts < r.blinkEnd && eye !== 4) eye = 3;
+    if (w === 'trump') { if (ts - PL.hitT < 320) { if (PL.hitR === 'bad') { mouth = 5; eye = 1; } else mouth = 3; } }
+    else if (TALK.who === w && ts < TALK.until) { mouth = [1, 2, 3, 2, 1, 2, 0, 2][Math.floor(ts / 105) % 8]; if (m === 'ecstatic') eye = 4; }
+    const key = eye + ',' + mouth; (S.faceKey || (S.faceKey = {}))[w] = key;
+    if (key !== r.key) { r.key = key; const R = RIGS[w]; rigPlace(r.im[0], R.eyes[eye * 2]); rigPlace(r.im[1], R.eyes[eye * 2 + 1]); rigPlace(r.im[2], R.mouths[mouth]); lsFace(w, eye, mouth); }
+    const bob = S.phase === 'play' ? Math.sin(((S.beat || 0) + r.ph) * Math.PI * 2) : 0;
+    r.root.style.transform = 'translateY(' + (bob * 1.6).toFixed(2) + '%) rotate(' + (bob * (m === 'ecstatic' ? 2.2 : 1)).toFixed(2) + 'deg)';
+  }
+}
 [['bass', 'Bass'], ['keys', 'Keys'], ['perc', 'Perc'], ['horns', 'Horns']].forEach(([k, n]) => { const d = document.createElement('div'); d.className = 'stem on'; d.id = 'stem-' + k; d.innerHTML = '<i></i>' + n; stemsEl.appendChild(d); });
 const meterEl = document.querySelector('.hud.meter');
 
@@ -208,28 +237,51 @@ function computeMood(seg) {
   if (k === 'break' || k === 'tag') return S.rank < .25 ? 'worried' : S.rank < .5 ? 'encourage' : 'groove';
   const r = S.rank; return r < .25 ? 'worried' : r < .5 ? 'encourage' : r < .75 ? 'groove' : 'ecstatic';
 }
+/* character portraits from the concept art; mood shows through color, pose tilt, sweat and sparkle */
+const PBG = { tomas: ['#3a52b0', '#18255f'], ines: ['#a1478a', '#4a1f52'], rafa: ['#2aa28f', '#0f4a50'], trump: ['#2f4fd0', '#0d1440'] };
+function portrait(who, mood, kind = 'head', bg = true) {
+  const c = PBG[who], fx = mood === 'worried' ? '<i class="psw"></i>' : mood === 'ecstatic' ? '<i class="psp"></i><i class="psp b"></i>' : '';
+  const set = PORTRAITS[who][mood] || PORTRAITS[who].groove || Object.values(PORTRAITS[who])[0];   // a drawn face per mood
+  return `<div class="pf m-${mood}${bg ? '' : ' nobg'}" style="--b0:${c[0]};--b1:${c[1]}"><img src="${set[kind]}" alt="" draggable="false">${fx}</div>`;
+}
 let reactTimer = 0;
 function showReact(m) {
-  const now = performance.now(); if (now - S.lastReact < 3500 || !cfg.fx) return; S.lastReact = now;
+  const now = performance.now(); if (now - S.lastReact < 3500 || !cfg.fx) return;
+  if (S.cut || stage.classList.contains('cine') || $('panels').classList.contains('on')) return;   // never stack on another animation S.lastReact = now;
   const who = S.sceneNow === 'practice' ? 'tomas' : ['tomas', 'ines', 'rafa'][Math.floor(Math.random() * 3)], r = $('react');
-  r.querySelector('.rface').innerHTML = faceSVG(who, m); r.querySelector('.rsfx').textContent = SFX[m];
+  r.querySelector('.rface').innerHTML = portrait(who, m, 'tall', false); r.querySelector('.rsfx').textContent = SFX[m];
   r.className = 'hud react m-' + m; void r.offsetWidth; r.classList.add('on');
   clearTimeout(reactTimer); reactTimer = setTimeout(() => r.classList.remove('on'), 1700);
 }
 function setMood(m) {
   if (m === S.mood && S.moodSet) return; const first = !S.moodSet; S.mood = m; S.moodSet = true;
-  ['tomas', 'ines', 'rafa'].forEach(w => { const e = $('face-' + w); e.firstChild.innerHTML = faceSVG(w, m); e.style.setProperty('--ring', MOODS[m]); });
+  ['tomas', 'ines', 'rafa'].forEach(w => $('face-' + w).style.setProperty('--ring', MOODS[m]));
+  $('face-player').style.setProperty('--ring', MOODS[m]);
   if (S.phase === 'play' && !first) {
     showReact(m);
     const now = performance.now();
     if (now - S.lastSay > 4500) {
-      const Ls = { worried: [['ines', 'Breathe. We’ve got you.'], ['rafa', 'Easy, find the clave.']], encourage: [['ines', 'Stay with us.'], ['tomas', 'Listen, then answer.']],
-        groove: [['tomas', 'Yeah. That’s the pocket.'], ['ines', 'There it is.']], ecstatic: [['rafa', '¡Dale! Now we’re cooking!'], ['tomas', 'Oh, that’s the sound.']] }[m];
-      const p = Ls[Math.floor(Math.random() * Ls.length)]; say(S.sceneNow === 'practice' ? 'tomas' : p[0], p[1], 2600);
+      const Ls = VOICE_MOOD[m];
+      sayId(S.sceneNow === 'practice' ? VOICE_PRACTICE[m] : Ls[Math.floor(Math.random() * Ls.length)], 2600);
     }
   }
 }
-let sayTimer = 0;
+let sayTimer = 0, voiceEl = null;
+const b64Buf = u => { const b = atob(u.slice(u.indexOf(',') + 1)), a = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) a[i] = b.charCodeAt(i); return a.buffer; };
+function sayId(id, ms) {
+  const l = VOICE_LINES[id]; say(l[0], l[1], ms); TALK.who = l[0]; TALK.until = performance.now() + Math.min(ms || 2600, 2200);
+  if (cfg.voice === false || !synth.ctx || !VOICE_DATA[id]) return;
+  const play = buf => {
+    if (voiceEl) { try { voiceEl.stop(); } catch (e) {} }
+    const s = synth.ctx.createBufferSource(), g = synth.ctx.createGain(); g.gain.value = 1.6; s.buffer = buf; s.connect(g); g.connect(synth.bus.voice); s.start(); voiceEl = s;
+    TALK.until = performance.now() + buf.duration * 1000; synth.duckFor(buf.duration + .1); S.voicePlays = (S.voicePlays || 0) + 1;
+  };
+  synth.voiceBuf = synth.voiceBuf || {};
+  if (synth.voiceBuf[id]) return play(synth.voiceBuf[id]);
+  // decode without fetch() so a locked-down page can't block it; callback form works on older Safari too
+  const done = buf => { synth.voiceBuf[id] = buf; play(buf); }, fail = e => { S.voiceErr = String(e && e.message || e); };
+  try { const r = synth.ctx.decodeAudioData(b64Buf(VOICE_DATA[id]), done, fail); if (r && r.catch) r.catch(fail); } catch (e) { fail(e); }
+}
 function say(who, text, ms) {
   $('subWho').textContent = CAST[who].name + ' · ' + CAST[who].role; $('subLine').textContent = text; $('sub').classList.add('on');
   S.lastSay = performance.now(); clearTimeout(sayTimer); sayTimer = setTimeout(() => $('sub').classList.remove('on'), ms || 2600);
@@ -238,6 +290,7 @@ function setCut(mode) {
   if (!cfg.fx || S.sceneNow === 'practice') mode = '';
   const cine = cfg.fx && S.sceneNow === 'club' && (mode === 'full' || (S.segKey.startsWith('solo') || S.segKey.startsWith('tag') || S.segKey.startsWith('break') || S.segKey.startsWith('comp')));
   stage.classList.toggle('cine', cine);
+  if (mode) $('react').classList.remove('on');
   if (S.cut === mode) return; S.cut = mode; $('closeWrap').className = mode;
   if (mode) { const f = $(mode === 'full' ? 'flash' : 'slash'); f.classList.remove('go'); void f.offsetWidth; f.classList.add('go'); }
 }
@@ -245,7 +298,8 @@ let panelTimer = 0;
 function showPanels(sfx, ms) {
   if (!cfg.fx || S.sceneNow !== 'club') return;
   const m = S.mood, strip = f => f.replace(/ clip-path="url\(#fc[^)]*\)"/g, '').replace(/(id="|url\(#)(fb|fc)/g, '$1P$2').replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" ');
-  $('panels').innerHTML = [strip(faceSVG('ines', m)), strip(faceSVG('tomas', m)), eyeStripSVG(), strip(faceSVG('rafa', m))].map(s => '<div class="pn">' + s + '</div>').join('') + '<div class="psfx">' + sfx + '</div>';
+  $('panels').innerHTML = [portrait('ines', m, 'tall'), portrait('tomas', m, 'tall'), portrait('trump', 'ecstatic', 'tall'), portrait('rafa', m, 'tall')].map(s => '<div class="pn">' + s + '</div>').join('') + '<div class="psfx">' + sfx + '</div>';
+  $('react').classList.remove('on');
   const p = $('panels'); p.classList.remove('on'); void p.offsetWidth; p.classList.add('on');
   FX.emit(14, 'spark'); clearTimeout(panelTimer); panelTimer = setTimeout(() => p.classList.remove('on'), ms || 1500);
 }
@@ -253,7 +307,7 @@ let cardTimer = 0;
 function showCard(small, big) { $('scSmall').textContent = small; $('scBig').textContent = big; $('sceneCard').classList.add('show'); clearTimeout(cardTimer); cardTimer = setTimeout(() => $('sceneCard').classList.remove('show'), 1800); }
 function setScene(scn) {
   if (S.sceneNow === scn) return; S.sceneNow = scn;
-  const v = document.querySelectorAll('#wideHost svg.view'); v[0].style.display = scn === 'club' ? '' : 'none'; v[1].style.display = scn === 'practice' ? '' : 'none';
+  const v = document.querySelectorAll('#wideHost svg.view'); v[0].style.display = 'none'; LS.root.style.display = scn === 'club' ? 'block' : 'none'; v[1].style.display = scn === 'practice' ? '' : 'none';
   stage.classList.toggle('practice', scn === 'practice');
   $('where').textContent = scn === 'practice' ? 'Scene 1 · The practice room' : 'Scene 2 · The Blue Room · ' + cfg.mode;
   $('btnSkip').hidden = scn !== 'practice'; $('takes').style.display = scn === 'practice' ? 'block' : 'none'; meterEl.style.display = scn === 'club' ? '' : 'none';
@@ -290,24 +344,27 @@ function releaseHold(b, tr) {
 const octShift = () => ((S.octKey || S.octLock) ? 12 : 0) - ((S.octDnKey || S.octDnLock) ? 12 : 0);
 function pressAt(b, tp) {
   const beat = (tp - S.t0) / SPB, seg = segAt(beat), D = DIFF[cfg.mode], octave = octShift();
-  if (seg && seg.k === 'solo') { soloPress(b, beat, octave); return; }
-  if (seg && (seg.k === 'resp' || seg.k === 'perf' || seg.k === 'head' || seg.k === 'comp')) {
-    let best = null, bd = 9;
-    for (const tg of S.targets) {
-      if (tg.state) continue;
-      const dt = Math.abs(tp - (S.t0 + tg.beat * SPB));
-      if (dt <= D.w[2] && dt < bd) { best = tg; bd = dt; }
-    }
+  // Find the nearest unjudged note in the timing window FIRST, whatever segment the press falls in.
+  // A slightly early press on the first note of a section lands in the previous segment
+  // (count-in, Tomás's call, the end of a solo); it must still count for that note.
+  let best = null, bd = 9;
+  for (const tg of S.targets) {
+    if (tg.state) continue;
+    const dt = Math.abs(tp - (S.t0 + tg.beat * SPB));
+    if (dt <= D.w[2] && dt < bd) { best = tg; bd = dt; }
+  }
+  if (!best && seg && seg.k === 'solo') { soloPress(b, beat, octave); return; }
+  {
     if (best) {
       let r = bd <= D.w[0] ? 'cool' : bd <= D.w[1] ? 'good' : 'bad', ok = true;
       if (cfg.mode === 'medium') ok = (b >> 1) === (best.button >> 1); else if (cfg.mode === 'hard') ok = b === best.button;
       if (!ok) r = 'bad';
       best.state = r; S.counts[r]++; addRank(DELTA[r]);
       S.streak = r === 'cool' ? S.streak + 1 : 0;
-      pop(r.toUpperCase() + (ok ? '' : ' · wrong key'), r === 'cool' ? '#ffb84d' : r === 'good' ? '#7fe3c8' : '#ff7a8a'); S.hitFx = { t: performance.now(), r };
+      pop(r.toUpperCase() + (ok ? '' : ' · wrong key'), r === 'cool' ? '#ffb84d' : r === 'good' ? '#7fe3c8' : '#ff7a8a'); S.hitFx = { t: performance.now(), r }; PL.hitT = performance.now(); PL.hitR = r;
       if (best.hold) { best.pressT = tp; best.holdState = 'active'; S.holds[b] = best; }
       startVoice(b, ok ? best.midi : BUTTON_PITCH[b], best.hold ? best.dur * SPB * 1400 + 250 : Math.max(140, best.dur * SPB * 900));
-      if (S.streak === 4 && seg.k !== 'resp') { S.cutUntil = beat + 2.2; setCut('inset'); FX.emit(10, 'spark'); }
+      if (S.streak === 4 && best.seg && best.seg.k !== 'resp') { S.cutUntil = beat + 2.2; setCut('inset'); FX.emit(10, 'spark'); }
       if (r === 'cool') FX.emit(2, 'note', FX.w * .5, FX.h * .55);
       return;
     }
@@ -315,7 +372,7 @@ function pressAt(b, tp) {
   startVoice(b, BUTTON_PITCH[b], 1800);
 }
 function soloPress(b, beat, octave) {
-  const ch = chordFor(beat), midi = ch.scale[b] + octave;
+  const ch = chordFor(beat + .15), midi = ch.scale[b] + octave;   // snap slightly-early presses to the coming chord
   startVoice(b, midi, 4000);
   S.played.push({ beat, midi, b });
   const now = performance.now();
@@ -333,7 +390,7 @@ function soloPress(b, beat, octave) {
     }
   }
   S.heat = clamp(S.heat + .02 + .04 * pocket * dens + .025 * vari * dens + .025 * space + .04 * echo, 0, 1);
-  if (S.heat > .85 && S.cut !== 'full' && beat > S.cutUntil + 6) { S.cutUntil = beat + 3; setCut('full'); FX.emit(14, 'spark'); if (performance.now() - (S.lastPanel || 0) > 12000) { S.lastPanel = performance.now(); showPanels('キターー!!', 1300); } }
+  if (S.heat > .85 && S.cut !== 'full' && beat > S.cutUntil + 6) { S.cutUntil = beat + 3; setCut('full'); FX.emit(14, 'spark'); if (performance.now() - (S.lastPanel || 0) > 12000) { S.lastPanel = performance.now(); showPanels('¡CANDELA!', 1300); } }
 }
 function inputDown(b, ts) {
   if (S.phase === 'cal') { calTap(evHeard(ts)); pads[b].classList.add('dn'); S.down[b] = true; return; }
@@ -401,7 +458,7 @@ function toTitle() { S.phase = 'title'; clearInterval(schedTimer); if (synth.ctx
 function endGame() {
   S.phase = 'end'; clearInterval(schedTimer);
   const c = S.counts, total = c.cool + c.good + c.bad + c.miss || 1, ratio = (c.cool + c.good * .7 + c.bad * .25) / total;
-  const g = ratio >= .8 ? 'Cool' : ratio >= .55 ? 'Good' : ratio >= .3 ? 'Bad' : 'Awful', happy = g === 'Cool' || g === 'Good';
+  const g = rankBand(S.rank), happy = g === 'Cool' || g === 'Good';   // same band the rank meter shows at the end
   const lines = { Cool: 'Standing ovation. The room wants an encore.', Good: 'A solid set. The room was with you.', Bad: 'A rough night, but the band had your back.', Awful: 'That one stings. Run it back, the song never stops for you.' };
   $('endArt').innerHTML = happy ? endGoodSVG() : endPoorSVG();
   $('endEye').textContent = happy ? 'Set complete' : 'Last call';
@@ -412,7 +469,8 @@ function endGame() {
   $('endSolo').textContent = S.soloOn ? `Solo heat ${Math.round((S.soloT ? S.heatSum / S.soloT : 0) * 100)}%. You earned the spotlight.` : `The band took the solo. Reach a rank of ${thr}% or better before the break to earn it on ${cfg.mode}.`;
   $('live').textContent = 'Set complete. Grade ' + g;
   setCut(''); showOv('ovEnd');
-  if (synth.ctx) setTimeout(() => synth.ctx && S.phase === 'end' && synth.ctx.suspend(), 3500);
+  if (happy && synth.ctx && cfg.fx !== false) { try { synth.cheer(g === 'Cool' ? 1 : .65); } catch (e) {} }
+  if (synth.ctx) setTimeout(() => synth.ctx && S.phase === 'end' && synth.ctx.suspend(), happy ? 9000 : 3500);
 }
 
 /* ---------- calibration ---------- */
@@ -450,6 +508,14 @@ document.querySelectorAll('#modeOpts .opt').forEach(b => b.addEventListener('cli
 $('rngOff').addEventListener('input', e => { cfg.offset = +e.target.value; saveCfg(); syncSettings(); });
 $('rngVol').addEventListener('input', e => { cfg.vol = +e.target.value; saveCfg(); syncSettings(); synth.setVolume(cfg.vol / 100); });
 $('chkFx').addEventListener('change', e => { cfg.fx = e.target.checked; saveCfg(); if (!cfg.fx) setCut(''); });
+if (cfg.three === undefined) cfg.three = true;
+$('chk3d').checked = cfg.three;
+if (cfg.voice === undefined) cfg.voice = true;
+$('chkVoice').checked = cfg.voice;
+$('chkVoice').addEventListener('change', e => { cfg.voice = e.target.checked; saveCfg(); });
+$('chk3d').addEventListener('change', e => { cfg.three = e.target.checked; saveCfg(); });
+const show3dSetting = () => { if (window.Club3D && Club3D.ok) $('set3d').hidden = false; };
+addEventListener('club3d-ready', show3dSetting); show3dSetting();
 $('btnStart').addEventListener('click', () => begin());
 $('btnSkip').addEventListener('click', () => begin({ club: true }));
 $('btnCal1').addEventListener('click', () => openCal('title'));
@@ -481,15 +547,15 @@ function onSegChange(seg) {
     solo: ['Solo', 'Play what you feel'], break: ['Tomás solos', 'Listen and learn'], head: ['The head', 'Phrase ' + (seg && seg.hook) + ' · all together'], tag: ['Tag', 'Thank you'] }[k] || ['', ''];
   $('bannerTxt').textContent = tag[0]; $('bannerSub').textContent = tag[1]; $('live').textContent = tag[0] + '. ' + tag[1];
   $('banner').querySelector('.tag').style.background = k === 'solo' ? '#7aa5ff' : k === 'call' ? '#cdd8ff' : k === 'comp' ? '#c4b5fd' : '#ffb84d';
-  if (k === 'resp' && seg.hook === 'A') say('tomas', pr ? 'Your turn. Hold the long notes.' : 'Your turn.', 2000);
-  if (k === 'call' && seg.hook === 'B') say('tomas', 'Here’s the second phrase.', 2200);
-  if (k === 'comp') { say('ines', 'My turn. Back me up — hold those chords.', 3200); setMood('ecstatic'); S.compDone = true; showPanels('ピアノ!', 1400); setTimeout(() => { if (S.segK === 'comp') { setCut('inset'); FX.emit(12, 'spark'); } }, 900); }
-  if (k === 'perf' && seg.hook === 'A' && !S.compDone) say('tomas', 'Now with the whole band!', 2400);
-  if (k === 'perf' && seg.hook === 'A' && S.compDone) { say('tomas', 'One more time — bring it home.', 2400); S.compDone = false; }
-  if (k === 'solo') { say('tomas', 'Take it, trumpet. It’s yours.', 3200); S.cutUntil = seg.a + 4; showPanels('ジャーン!', 1400); setTimeout(() => { if (S.segK === 'solo') { setCut('full'); FX.emit(18, 'spark'); } }, 1100); }
-  if (k === 'break') { say('tomas', 'I’ve got this one. Listen and learn.', 3200); setMood('encourage'); }
-  if (k === 'head' && seg.hook === 'A') say('ines', 'Bring it home!', 2200);
-  if (k === 'tag') { showPanels('ブラボー!', 1500); setCut('inset'); S.cutUntil = seg.a + 3; FX.emit(20, 'spark'); }
+  if (k === 'resp' && seg.hook === 'A') sayId(pr ? 't_turn_long' : 't_turn', 2000);
+  if (k === 'call' && seg.hook === 'B') sayId('t_second', 2200);
+  if (k === 'comp') { sayId('i_my_turn', 3200); setMood('ecstatic'); S.compDone = true; showPanels('¡PIANO!', 1400); setTimeout(() => { if (S.segK === 'comp') { setCut('inset'); FX.emit(12, 'spark'); } }, 900); }
+  if (k === 'perf' && seg.hook === 'A' && !S.compDone) sayId('t_whole_band', 2400);
+  if (k === 'perf' && seg.hook === 'A' && S.compDone) { sayId('t_bring_home', 2400); S.compDone = false; }
+  if (k === 'solo') { sayId('t_take_it', 3200); S.cutUntil = seg.a + 4; showPanels('¡TOMA!', 1400); setTimeout(() => { if (S.segK === 'solo') { setCut('full'); FX.emit(18, 'spark'); } }, 1100); }
+  if (k === 'break') { sayId('t_break', 3200); setMood('encourage'); }
+  if (k === 'head' && seg.hook === 'A') sayId('i_bring_home', 2200);
+  if (k === 'tag') { showPanels('¡BRAVO!', 1500); setCut('inset'); S.cutUntil = seg.a + 3; FX.emit(20, 'spark'); }
 }
 let lastFrame = performance.now(), lastAnim = 0;
 function decideRound() {
@@ -499,8 +565,8 @@ function decideRound() {
   const R2 = S.roundStart + 32;
   if (clean) { S.clean++; updateTakes(); }
   addSeg({ k: 'gap', a: R2, b: R2 + 2, cb: R2, scene: 'practice' });
-  if (clean && S.clean >= 3) { say('tomas', 'That’s the hook. Let’s go play it for real.', 2600); startClub(R2 + 2); S.practiceDone = true; }
-  else { say('tomas', clean ? 'Good take! Again.' : (miss > 2 ? 'Almost. Listen again, a little slower.' : 'Close. Tighten it up and hold the long notes.'), 2400); S.clean = clean ? S.clean : S.clean; startRound(R2 + 2); }
+  if (clean && S.clean >= 3) { sayId('t_hook_real', 2600); startClub(R2 + 2); S.practiceDone = true; }
+  else { sayId(clean ? 't_good_take' : (miss > 2 ? 't_almost' : 't_close'), 2400); S.clean = clean ? S.clean : S.clean; startRound(R2 + 2); }
   pop(clean ? 'NICE TAKE' : 'AGAIN', clean ? '#ffb84d' : '#8ea4e0');
 }
 function update(dt) {
@@ -511,7 +577,7 @@ function update(dt) {
   if (!S.roundDecided && (S.beat >= S.roundStart + 31.6 || S.ctxBeat >= S.roundStart + 33.2)) decideRound();
   if (S.clubC0 !== null && S.soloOn === null && (S.beat >= S.soloAt - 1 || S.ctxBeat >= S.soloAt - .45) && S.clubStarted) {
     S.soloOn = S.rank >= D.thr; extendClub(S.soloOn);
-    say('tomas', S.soloOn ? 'Solo’s yours. Take it!' : 'Let me take this one.', 2600);
+    sayId(S.soloOn ? 't_solo_yours' : 't_let_me', 2600);
   }
   if (k === 'solo') { S.heat = Math.max(0, S.heat - dt * .15); S.heatSum += S.heat * dt; S.soloT += dt; }
   if (S.soloOn && S.segK === 'solo' && k !== 'solo' && !S.soloDone) { S.soloDone = true; const avg = S.soloT ? S.heatSum / S.soloT : 0; addRank(clamp((avg - .35) * .35, -.1, .15)); }
@@ -554,11 +620,12 @@ function animate(tms) {
   const playing = S.voices.some(v => v) || performance.now() - S.lastNote < 160;
   const pv = S.down.map(d => d ? 5 : 0), horn = playing ? -3 - (S.playMidi - 60) * .12 + sw : 0;
   const setValves = (id) => { const c = el[id].children; c[0].setAttribute('transform', `translate(0,${pv[0]})`); c[1].setAttribute('transform', `translate(0,${pv[1] || pv[3]})`); c[2].setAttribute('transform', `translate(0,${pv[2]})`); };
+  if (S.sceneNow === 'club') lsUpdate(tms, pos, sw, sw2, amp, lean, playing, (t, k) => env(pos, t, k));
   if (S.sceneNow === 'practice') {
     T('c-ptrump', `translate(780,${858 - Math.abs(sw2) * 2 * amp}) scale(1.55)`); T('p-trump-head', `rotate(${lean * .6},8,-300)`); T('p-trump-horn', `rotate(${horn},50,-326)`);
     setValves('p-valves'); el['p-bellGlow'].setAttribute('opacity', (.2 + (playing ? .5 : 0)).toFixed(2));
     T('p-tomas-b', `rotate(${sw2 * amp * .8},0,-170)`);
-  } else {
+  } else if (!S.use3d) {
     T('c-bass', `translate(300,${712 - Math.abs(sw2) * 3 * amp})`);
     T('bass-body', `rotate(${sw2 * amp * .9},0,-170)`); T('bass-head', `rotate(${lean + sw * amp},4,-345)`);
     T('bass-armR', `rotate(${12 * env(pos, [1.5, 3, 3.5], .15) - 4},22,-318)`); T('bass-armL', `rotate(${sw2 * 2},-14,-322)`);
@@ -617,7 +684,7 @@ function drawScore() {
       const x = X(bb) - barPad; if (x < clefW - 2 || x > w + 4) continue;
       g.strokeStyle = 'rgba(190,208,250,.5)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x, Y(8)); g.lineTo(x, Y(0)); g.stroke();
       const ch = CHORDS[mod(Math.floor((bb - sg.cb) / 4), 4)], cur = beat >= bb && beat < bb + 4;
-      g.font = `700 ${Math.round(sp * 1.5)}px 'Shippori Mincho B1', Georgia, serif`; g.fillStyle = cur ? '#ffb84d' : 'rgba(205,216,250,.78)'; g.fillText(ch.name, x + 6, Y(8) - sp * 3.6);
+      g.font = `700 ${Math.round(sp * 1.5)}px 'Playfair Display', Georgia, serif`; g.fillStyle = cur ? '#ffb84d' : 'rgba(205,216,250,.78)'; g.fillText(ch.name, x + 6, Y(8) - sp * 3.6);
     }
   }
   g.strokeStyle = 'rgba(190,208,250,.55)'; g.lineWidth = 1;
@@ -656,8 +723,8 @@ function drawScore() {
         if (e.holdState === 'active') { const nx = x + Math.cos(-Math.PI / 2 + need * e.dur / e.dur * Math.PI * 2) * sp * 1.75, ny = y + Math.sin(-Math.PI / 2 + need * Math.PI * 2) * sp * 1.75; g.fillStyle = '#fff'; g.beginPath(); g.arc(nx, ny, 2.2, 0, 7); g.fill(); }
       }
       const by = bottom + 3.1 * sp; g.fillStyle = col; g.beginPath(); g.arc(x, by, sp * .92, 0, 7); g.fill();
-      g.fillStyle = '#1a1206'; g.font = `800 ${Math.round(sp * 1.2)}px 'Shippori Mincho B1', Georgia, serif`; g.textAlign = 'center'; g.fillText(BKEY[e.button], x, by + sp * .42); g.textAlign = 'left';
-      if (e.hold && !e.holdState) { g.fillStyle = 'rgba(244,236,216,.7)'; g.font = `500 ${Math.round(sp * .9)}px 'Zen Kaku Gothic New', sans-serif`; g.textAlign = 'center'; g.fillText('hold', x, by + sp * 2.1); g.textAlign = 'left'; }
+      g.fillStyle = '#1a1206'; g.font = `800 ${Math.round(sp * 1.2)}px 'Playfair Display', Georgia, serif`; g.textAlign = 'center'; g.fillText(BKEY[e.button], x, by + sp * .42); g.textAlign = 'left';
+      if (e.hold && !e.holdState) { g.fillStyle = 'rgba(244,236,216,.7)'; g.font = `500 ${Math.round(sp * .9)}px 'DM Sans', sans-serif`; g.textAlign = 'center'; g.fillText('hold', x, by + sp * 2.1); g.textAlign = 'left'; }
     }
     g.globalAlpha = 1;
   };
@@ -679,34 +746,34 @@ function drawScore() {
   g.textAlign = 'center';
   if (segK === 'count') {
     const n = Math.floor(beat - seg.a) + 1, f = 1 - mod(beat - seg.a, 1);
-    g.fillStyle = `rgba(255,184,77,${(.25 + f * .7).toFixed(2)})`; g.font = `800 ${sp * 5}px 'Shippori Mincho B1', serif`; g.fillText(clamp(n, 1, 4), nowX + (w - nowX) * .45, Y(2) + sp * .5);
+    g.fillStyle = `rgba(255,184,77,${(.25 + f * .7).toFixed(2)})`; g.font = `800 ${sp * 5}px 'Playfair Display', serif`; g.fillText(clamp(n, 1, 4), nowX + (w - nowX) * .45, Y(2) + sp * .5);
   }
   if (segK === 'solo' || segK === 'break') {
     const cx = nowX + (w - nowX) * .5;
     if (segK === 'solo') {
-      const ch = chordFor(beat, seg), oct = octShift(), gap = Math.min(86, (w - nowX) / 5.2), fade = clamp((seg.b - beat - 1.2) / 3, 0, 1);
+      const ch = chordFor(beat + .15, seg), oct = octShift(), gap = Math.min(86, (w - nowX) / 5.2), fade = clamp((seg.b - beat - 1.2) / 3, 0, 1);
       g.globalAlpha = fade;
       for (let i = 0; i < 4; i++) {
         const x = cx + (i - 1.5) * gap, y = Y(4) + 2, pr = S.down[i];
         g.fillStyle = BCOL[i]; g.globalAlpha = fade * (pr ? 1 : .88); g.beginPath(); g.arc(x, y, sp * (pr ? 2.1 : 1.8), 0, 7); g.fill(); g.globalAlpha = fade;
-        g.fillStyle = '#1a1206'; g.font = `800 ${sp * 1.7}px 'Shippori Mincho B1', serif`; g.fillText(BKEY[i], x, y + sp * .35);
-        g.fillStyle = 'rgba(244,236,216,.85)'; g.font = `500 ${Math.round(sp * 1.05)}px 'Zen Kaku Gothic New', sans-serif`; g.fillText(midiName(ch.scale[i] + oct), x, y + sp * 3.1);
+        g.fillStyle = '#1a1206'; g.font = `800 ${sp * 1.7}px 'Playfair Display', serif`; g.fillText(BKEY[i], x, y + sp * .35);
+        g.fillStyle = 'rgba(244,236,216,.85)'; g.font = `500 ${Math.round(sp * 1.05)}px 'DM Sans', sans-serif`; g.fillText(midiName(ch.scale[i] + oct), x, y + sp * 3.1);
       }
       const bw = Math.min(260, (w - nowX) * .7), bx = cx - bw / 2, by = Y(8) - sp * 1.2;
       g.fillStyle = 'rgba(120,140,200,.25)'; g.fillRect(bx, by, bw, 6); const hg = g.createLinearGradient(bx, 0, bx + bw, 0); hg.addColorStop(0, '#7aa5ff'); hg.addColorStop(1, '#ffb84d');
-      g.fillStyle = hg; g.fillRect(bx, by, bw * S.heat, 6); g.fillStyle = 'rgba(244,236,216,.8)'; g.font = `500 ${Math.round(sp)}px 'Zen Kaku Gothic New', sans-serif`; g.fillText('HEAT · stay in the pocket, vary your notes, leave space', cx, by - 6);
-      g.globalAlpha = Math.min(1, (1 - fade) * 1.5) * (fade > 0 ? 1 : 1); if (fade < 1) { g.fillStyle = '#ffb84d'; g.font = `800 ${Math.min(sp * 1.7, w / 22)}px 'Shippori Mincho B1', serif`; g.fillText('Get ready: the hook is coming back', cx, Math.max(sp * 1.6, 16)); }
+      g.fillStyle = hg; g.fillRect(bx, by, bw * S.heat, 6); g.fillStyle = 'rgba(244,236,216,.8)'; g.font = `500 ${Math.round(sp)}px 'DM Sans', sans-serif`; g.fillText('HEAT · stay in the pocket, vary your notes, leave space', cx, by - 6);
+      g.globalAlpha = Math.min(1, (1 - fade) * 1.5) * (fade > 0 ? 1 : 1); if (fade < 1) { g.fillStyle = '#ffb84d'; g.font = `800 ${Math.min(sp * 1.7, w / 22)}px 'Playfair Display', serif`; g.fillText('Get ready: the hook is coming back', cx, Math.max(sp * 1.6, 16)); }
       g.globalAlpha = 1;
     } else {
-      g.fillStyle = 'rgba(244,236,216,.85)'; g.font = `700 ${Math.min(sp * 1.9, w / 20)}px 'Shippori Mincho B1', serif`; g.fillText('Tomás takes the solo', cx, Y(4)); g.font = `400 ${Math.min(sp * 1.1, w / 38)}px 'Zen Kaku Gothic New', sans-serif`; g.fillStyle = '#93a2cf'; g.fillText('Keep your rank up to earn the next solo', cx, Y(4) + sp * 2.2);
+      g.fillStyle = 'rgba(244,236,216,.85)'; g.font = `700 ${Math.min(sp * 1.9, w / 20)}px 'Playfair Display', serif`; g.fillText('Tomás takes the solo', cx, Y(4)); g.font = `400 ${Math.min(sp * 1.1, w / 38)}px 'DM Sans', sans-serif`; g.fillStyle = '#93a2cf'; g.fillText('Keep your rank up to earn the next solo', cx, Y(4) + sp * 2.2);
     }
   }
-  if (segK === 'tag') { g.fillStyle = 'rgba(244,236,216,.85)'; g.font = `700 ${sp * 2}px 'Shippori Mincho B1', serif`; g.fillText('Thank you, good night', nowX + (w - nowX) * .5, Y(4)); }
-  if (S.holds.some(t => t && t.holdState === 'active')) { g.fillStyle = '#ffb84d'; g.font = `800 ${Math.round(sp * 1.5)}px 'Shippori Mincho B1', serif`; g.fillText('HOLD', nowX, Y(8) - sp * 2.6); }
+  if (segK === 'tag') { g.fillStyle = 'rgba(244,236,216,.85)'; g.font = `700 ${sp * 2}px 'Playfair Display', serif`; g.fillText('Thank you, good night', nowX + (w - nowX) * .5, Y(4)); }
+  if (S.holds.some(t => t && t.holdState === 'active')) { g.fillStyle = '#ffb84d'; g.font = `800 ${Math.round(sp * 1.5)}px 'Playfair Display', serif`; g.textAlign = 'right'; g.lineWidth = 4; g.strokeStyle = '#080d27'; g.strokeText('HOLD', nowX - sp * 1.2, Y(8) - sp * 2.2); g.fillText('HOLD', nowX - sp * 1.2, Y(8) - sp * 2.2); }
   g.textAlign = 'left';
   const nowMs = performance.now();
   S.pops = S.pops.filter(p => nowMs - p.t < 700);
-  S.pops.forEach(p => { const k = (nowMs - p.t) / 700; g.globalAlpha = 1 - k; g.fillStyle = p.col; g.font = `800 italic ${Math.round(sp * 1.9)}px 'Shippori Mincho B1', serif`; g.textAlign = 'center'; g.fillText(p.text, nowX + 40, Y(8) - sp * 2.2 - k * 14); g.textAlign = 'left'; });
+  S.pops.forEach(p => { const k = (nowMs - p.t) / 700; g.globalAlpha = 1 - k; g.fillStyle = p.col; g.font = `800 italic ${Math.round(sp * 1.9)}px 'Playfair Display', serif`; g.textAlign = 'left'; g.lineWidth = 4; g.strokeStyle = '#080d27'; g.strokeText(p.text, nowX + sp * 1.2, Y(8) - sp * 2.2 - k * 14); g.fillText(p.text, nowX + sp * 1.2, Y(8) - sp * 2.2 - k * 14); });
   g.globalAlpha = 1; g.restore();
 }
 
@@ -716,7 +783,15 @@ function frame(ts) {
   const dt = Math.min(.1, (ts - lastFrame) / 1000); lastFrame = ts;
   if (S.phase === 'play') { S.now = heardNow(); S.ctxBeat = (S.now - S.t0) / SPB; S.beat = (S.now - L() - S.t0) / SPB; update(dt); }
   else if (S.phase === 'title') S.beat = -4;
+  rigTick(ts);
   drawScore();
+  // 3D club: when loaded and enabled, it replaces the 2D club drawing (close-ups and panels still overlay it)
+  const scn3 = S.sceneNow === 'club' || S.sceneNow === 'practice', ph3 = S.phase === 'title' || S.phase === 'play' || S.phase === 'pause';
+  const want3d = !!(cfg.three && window.__want3d && !window.__no3d && scn3 && (ph3 || S.phase === 'end')), use3d = !!(want3d && window.Club3D && Club3D.ok && ph3);
+  if (use3d && window.Club3D.sceneNow !== S.sceneNow) Club3D.setScene(S.sceneNow);
+  if (want3d !== S.want3d) { S.want3d = want3d; stage.classList.toggle('three', want3d); }
+  if (use3d !== S.use3d) S.use3d = use3d;
+  if (use3d && (S.phase === 'play' || S.phase === 'title')) { try { Club3D.frame(ts); } catch (e) { console.error(e); Club3D.ok = false; } }
   if (ts - lastAnim > 83) {
     lastAnim = ts; animate(ts);
     FX.draw(.083, S.speed, cfg.fx, S.cut === 'full' ? .5 : .62, S.cut === 'full' ? .5 : .55);
@@ -726,4 +801,5 @@ resetSong(-4); setScene('practice'); setMood('groove'); $('banner').querySelecto
 $('bannerTxt').textContent = 'Ready'; $('bannerSub').textContent = '';
 requestAnimationFrame(frame);
 S.begin = begin; S.showPanels = showPanels; S.setCut = setCut;
+S.setMoodTest = m => { S.phase = 'play'; S.mood = ''; setMood(m); S.phase = 'pause'; };   // test hook: freeze on one mood
 })();

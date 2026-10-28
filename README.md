@@ -2,11 +2,11 @@
 
 A Latin-jazz rhythm game in the spirit of PaRappa the Rapper, with an anime look inspired by *Blue Giant*. You play trumpet: learn the band's hooks in the practice room, then play them live at the club, back up the pianist's solo, and earn your own freestyle solo.
 
-Everything runs in the browser. The music is synthesized live with the Web Audio API, notation is drawn with the Bravura music font, and the art is inline SVG plus canvas effects.
+Everything runs in the browser. The club and practice room are 3D (three.js) with manga-style 2D portrait pop-ins, the band's voices are generated Latin American Spanish lines, and a crowd cheers if you finish well. The music is synthesized live with the Web Audio API, notation is drawn with the Bravura music font, and the art is inline SVG plus canvas effects.
 
 ## Play
 
-Open `index.html` in a browser. To host it, turn on GitHub Pages for this repo (Settings → Pages → deploy from `main`, root folder).
+Open `index.html` in a browser for the 3D demo (it loads three.js from a CDN and falls back to the 2D club if that is blocked), or `noche-azul-2d.html` for the 2D-only build. To host it, turn on GitHub Pages for this repo (Settings → Pages → deploy from `main`, root folder).
 
 | Input | Action |
 | --- | --- |
@@ -28,25 +28,17 @@ The trumpet is monophonic: a new note cuts off the previous one.
 ## Project layout
 
 ```
-src/head.html   markup + CSS (Bravura font is injected at build time)
-src/audio.js    synth, hooks, chord tables, solo lines
-src/art.js      SVG scenes, characters, trumpet, FX layer
-src/game.js     scheduler, segments, judging, scoring, notation, input
-assets/         Bravura.woff2 (SIL Open Font License 1.1)
-build.py        inlines everything into index.html
-tests/          Playwright bots (perfect / tap / no-input) and visual screenshots
+src/head.html    markup + CSS (Bravura font is injected at build time)
+src/audio.js     synth, hooks, chord tables, solo lines, crowd cheer
+src/art.js       SVG scenes, characters, trumpet, FX layer
+src/game.js      scheduler, segments, judging, scoring, notation, input
+src/lstage.js    layered 2D stage (injected into game.js at build time)
+src/club3d.js    three.js club and practice room, camera director, IK band
+src/rig.js, rigs.js, stage.js   generated portrait and stage art (base64)
+src/voices.js    generated voice lines (kokoro-onnx, es-419), base64 mp3
+build.py         builds index.html (3D demo) and noche-azul-2d.html
 ```
 
-## Build and test
+## Story and design
 
-```bash
-python3 build.py                 # writes index.html
-npm i -D playwright && npx playwright install chromium
-node tests/practice.test.js      # practice room: three clean takes -> club
-node tests/club.test.js          # club run: perfect bot, tap bot, no-input bot
-node tests/visual.test.js        # screenshots to shots/
-```
-
-## Credits
-
-Music font: [Bravura](https://github.com/steinbergmedia/bravura) by Steinberg, SIL Open Font License 1.1.
+The next version follows four friends from age 9 to Newport across five stages, each with its own song, and the hook evolves until the final suite quotes them all. The full game design document lives in the Claude doc "Noche Azul: Game Design Document".

@@ -56,10 +56,12 @@ class Synth {
     this.rev = ctx.createConvolver(); this.rev.buffer = this.impulse(1.7, 2.8);
     const revOut = ctx.createGain(); revOut.gain.value = 0.9;
     this.rev.connect(revOut); revOut.connect(this.master);
-    const sends = { bass: .04, keys: .45, perc: .14, horns: .5, lead: .6, player: .55, fx: .1 };
+    const sends = { bass: .04, keys: .45, perc: .14, horns: .5, lead: .6, player: .55, fx: .1, voice: .12 };
     this.bus = {};
+    // the band runs through a duck node so a spoken line can sit on top of the music
+    this.duck = ctx.createGain(); this.duck.gain.value = 1; this.duck.connect(this.master);
     for (const k in sends) {
-      const g = ctx.createGain(); g.gain.value = 1; g.connect(this.master);
+      const g = ctx.createGain(); g.gain.value = 1; g.connect(k === 'voice' || k === 'player' ? this.master : this.duck);
       const s = ctx.createGain(); s.gain.value = sends[k]; g.connect(s); s.connect(this.rev);
       this.bus[k] = g;
     }
@@ -75,6 +77,22 @@ class Synth {
       for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay);
     }
     return b;
+  }
+  duckFor(sec) {
+    if (!this.duck) return; const t = this.ctx.currentTime, g = this.duck.gain;
+    g.cancelScheduledValues(t); g.setTargetAtTime(.5, t, .06); g.setTargetAtTime(1, t + sec, .25);
+  }
+  cheer(level = 1) {   // a crowd: swelling band-passed noise, claps, and a few whoops
+    const ctx = this.ctx, t = ctx.currentTime + .05, dur = 4.2 + level * 2, out = ctx.createGain(); out.gain.value = .9 * level; out.connect(this.master);
+    const body = (freq, q, peak, at) => { const s = ctx.createBufferSource(); s.buffer = this.noise; s.loop = true; const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = q; const g = ctx.createGain(); g.gain.setValueAtTime(.0001, t + at); g.gain.linearRampToValueAtTime(peak, t + at + .5); g.gain.setValueAtTime(peak, t + dur * .55); g.gain.exponentialRampToValueAtTime(.0008, t + dur); s.connect(f); f.connect(g); g.connect(out); s.start(t + at, Math.random()); s.stop(t + dur + .1); };
+    body(700, .7, .35, 0); body(1800, .9, .22, .1); body(3600, 1.2, .1, .2);
+    for (let i = 0; i < 70 * level; i++) { const at = Math.random() * (dur * .8); this.nz(t + at - ctx.currentTime + ctx.currentTime, .05 + Math.random() * .05, 'bandpass', 1400 + Math.random() * 2600, 1.4, .1 + Math.random() * .18, 'fx'); }
+    for (let i = 0; i < 4 + 4 * level; i++) {
+      const at = .25 + Math.random() * (dur * .55), o = ctx.createOscillator(); o.type = 'sawtooth'; const f0 = 330 + Math.random() * 220;
+      o.frequency.setValueAtTime(f0, t + at); o.frequency.exponentialRampToValueAtTime(f0 * 1.5, t + at + .35);
+      const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 3; const g = ctx.createGain(); g.gain.setValueAtTime(.0001, t + at); g.gain.linearRampToValueAtTime(.05, t + at + .1); g.gain.exponentialRampToValueAtTime(.0005, t + at + .6);
+      o.connect(f); f.connect(g); g.connect(out); o.start(t + at); o.stop(t + at + .7);
+    }
   }
   setVolume(v) { this.vol = v; if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02); }
   setStem(name, v) { if (this.bus) this.bus[name].gain.setTargetAtTime(v, this.ctx.currentTime, 0.25); }
